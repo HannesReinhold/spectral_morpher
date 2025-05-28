@@ -6,40 +6,57 @@
 using namespace ci;
 using namespace std;
 
-typedef std::shared_ptr<class BiquadFilter>	BiquadFilterRef;
+typedef std::shared_ptr<class SpectralHarmonizerEngine>	SpectralHarmonizerEngineRef;
 
-class BiquadFilter : public audio::Node {
+#define MAX_FILTERBANK_SIZE 240
+
+class SpectralHarmonizerEngine : public audio::Node {
 public:
-	BiquadFilter(const Format& format = Format()) : Node(format) { for (int i = 0; i < 2; i++) { biquad[i] = Biquad(); } }
-	~BiquadFilter() {}
-	void setFreq(float drive);
-	void setQ(float q);
+	SpectralHarmonizerEngine(const Format& format = Format()) : Node(format) { for (int i = 0; i < 2; i++) { biquad[i] = Biquad(); } }
+	~SpectralHarmonizerEngine() {}
+	void setPreGain(float gain);
+	void setPitchShiftCt(float gain);
+	void setFreqShiftHz(float gain);
 
 private:
 	void process(audio::Buffer* buffer);
-	float mFreq = 1000;
-	Biquad biquad[2];
+
+	// parameters
+	// pre effects
+	float mPreGain = 1; // -100dB - 10dB
+	float mPitchShiftCt = 0; // -2400 - 2400
+	float mFreqShiftHz = 0; // -1000 - 1000
+
+	// transients
+	float preserveTransients = 0; // 0-1
+
+	// filtering
+	float filterResonance = 1; // 0 - 1
+	float addHarmonicResonators = 0.3f; // 0-1
+	
+	// synthesis stuff
+	Biquad filterbank[];
 };
 
 
+// Set Params
 
-inline void BiquadFilter::setFreq(float freq)
-{
-	for (int i = 0; i < 2; i++) {
-		biquad[i].setFc(freq);
-	}
+void SpectralHarmonizerEngine::setPreGain(float gain) {
+	mPreGain = gain;
 }
 
-inline void BiquadFilter::setQ(float q)
-{
-	for (int i = 0; i < 2; i++) {
-		biquad[i].setQ(q);
-	}
+void SpectralHarmonizerEngine::setPitchShiftCt(float pitchShift) {
+	mPitchShiftCt = pitchShift;
+}
+
+void SpectralHarmonizerEngine::setFreqShiftHz(float freqShift) {
+	mFreqShiftHz = freqShift;
 }
 
 
+// Main Processing
 
-void BiquadFilter::process(audio::Buffer* buffer)
+void SpectralHarmonizerEngine::process(audio::Buffer* buffer)
 {
 	int numChannels = buffer->getNumChannels();
 	int blockSize = buffer->getNumFrames();
@@ -47,8 +64,35 @@ void BiquadFilter::process(audio::Buffer* buffer)
 	float* data = buffer->getData();
 
 	for (int sample = 0; sample < blockSize; sample++) {
+		float sample = (data[0 * blockSize + sample] + data[1 * blockSize + sample])/2.0f;
+
+		// step 1: get transient response using rms peak detection
+
+		// step 2: apply pre gain
+		sample *= mPreGain
+		// step 3: apply pitch/frequency shift
+
+		// step 4:
+		// constant q transform using filterbank (bandpass for every note + some harmonics)
+		// apply intensity mask (non parametric -> use spline based) -> multiply each band with intensity at that freq
+		// or
+		// apply intensity mask to filterbank of peak filters to boost in key frequencies and lessen out key frequencies
+		// or
+		// use delay based feedback resonators to boost in key frrquencies and cut out key frequencies
+
+		// step 5: apply transients back using transient shaper
+
+
+
+
+		data[0 * blockSize + sample] = input;
+		data[1 * blockSize + sample] = input;
+
+		// channel based processing used later
+		/*
 		for (int ch = 0; ch < numChannels; ch++) {
-			data[ch * blockSize + sample] = biquad[ch].process(data[ch * blockSize + sample]);
+			
 		}
+		*/
 	}
 }
