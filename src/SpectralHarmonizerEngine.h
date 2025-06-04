@@ -67,20 +67,32 @@ void SpectralHarmonizerEngine::process(audio::Buffer* buffer)
 		float sample = (data[0 * blockSize + sample] + data[1 * blockSize + sample])/2.0f;
 
 		// step 1: get transient response using rms peak detection
+		// calc abs
+		// lowpass
+		// rms
 
-		// step 2: apply pre gain
+		// step 2: apply pitch/frequency shift
+		// pitch: use phase vocoder
+		// freq: use hilbert transformer
+
+		// step 3: apply pre gain
 		sample *= mPreGain
-		// step 3: apply pitch/frequency shift
+		
 
 		// step 4:
 		// constant q transform using filterbank (bandpass for every note + some harmonics)
 		// apply intensity mask (non parametric -> use spline based) -> multiply each band with intensity at that freq
+		// if not in key -> pitch shift band up or down, so it fits into scale (needs a lot of pitch shifters so maybe inefficient)
+		// Apply distortion to each band individually to create higher harmonics -> exciter
+		// Apply feedback comb filter to resonate harmonics
+		// Apply intensity mask to bands and add them together
 		// or
 		// apply intensity mask to filterbank of peak filters to boost in key frequencies and lessen out key frequencies
 		// or
 		// use delay based feedback resonators to boost in key frrquencies and cut out key frequencies
 
 		// step 5: apply transients back using transient shaper
+		// use compressor to reduce volume if over original envelope
 
 
 
